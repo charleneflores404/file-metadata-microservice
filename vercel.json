@@ -1,4 +1,0 @@
-{
-  "version": 2,
-  "routes": [{ "src": "/api/fileanalyse", "dest": "/api/index.js" }]
-}
