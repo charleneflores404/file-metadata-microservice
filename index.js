@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
 
@@ -9,6 +10,19 @@ const upload = multer({ dest: "uploads/" });
 
 app.use(cors());
 app.use("/public", express.static(process.cwd() + "/public"));
+
+const mongoose = require("mongoose");
+
+mongoose.connect(process.env.MONGO_URI);
+
+const fileSchema = new mongoose.Schema({
+  name: String,
+  type: String,
+  size: Number,
+  uploadedAt: { type: Date, default: Date.now },
+});
+
+const File = mongoose.model("File", fileSchema);
 
 app.get("/", function (req, res) {
   res.sendFile(process.cwd() + "/views/index.html");
@@ -20,13 +34,14 @@ app.get("/favicon.ico", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "favicon.ico"));
 });
 
-app.post("/api/fileanalyse", upload.single("upfile"), (req, res, next) => {
-  const file = req.file;
-  res.json({
-    name: file.originalname,
-    type: file.mimetype,
-    size: file.size,
-  });
+app.post("/api/fileanalyse", upload.single("upfile"), async (req, res) => {
+  const fileData = {
+    name: req.file.originalname,
+    type: req.file.mimetype,
+    size: req.file.size,
+  };
+  await File.create(fileData);
+  res.json(fileData);
 });
 
 // Listen locally; if statement to prevent production error on vercel
