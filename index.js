@@ -7,6 +7,7 @@ const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 
 app.use(cors());
+app.use("/public", express.static(process.cwd() + "/public"));
 app.use(express.static("views"));
 
 app.get("/", (req, res) => {
