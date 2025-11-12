@@ -1,20 +1,26 @@
 const express = require("express");
 const cors = require("cors");
+const multer = require("multer");
+const path = require("path");
 require("dotenv").config();
 
 const app = express();
 
-const bodyParser = require("body-parser");
-const multer = require("multer");
 // const upload = multer({ dest: "uploads/" });
 const upload = multer({ storage: multer.memoryStorage() }); // use memory storage instead of disk as vercel cannot write to disk
 
 app.use(cors());
-app.use("/public", express.static(process.cwd() + "/public"));
+app.use(express.urlencoded({ extended: true }));
+
+// serve public files
+app.use("/public", express.static(path.join(__dirname, "public")));
 
 const mongoose = require("mongoose");
 
-mongoose.connect(process.env.MONGO_URI);
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
 const fileSchema = new mongoose.Schema({
   name: String,
@@ -26,14 +32,14 @@ const fileSchema = new mongoose.Schema({
 const File = mongoose.model("File", fileSchema);
 
 app.get("/", function (req, res) {
-  res.sendFile(process.cwd() + "/views/index.html");
+  res.sendFile(path.join(__dirname, "views", "index.html"));
 });
 
 // Serve favicon to prevent route errors
-const path = require("path");
-app.get("/favicon.ico", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "favicon.ico"));
-});
+// app.get("/favicon.ico", (req, res) => {
+//   res.sendFile(path.join(__dirname, "public", "favicon.ico"));
+// });
+app.get("/favicon.ico", (req, res) => res.status(204).end());
 
 app.post("/api/fileanalyse", upload.single("upfile"), async (req, res) => {
   const fileData = {
