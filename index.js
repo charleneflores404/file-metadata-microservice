@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
+const mongoose = require("mongoose");
 require("dotenv").config();
 
 const app = express();
@@ -15,13 +16,20 @@ app.use(express.urlencoded({ extended: true }));
 // serve public files
 app.use("/public", express.static(path.join(__dirname, "public")));
 
-const mongoose = require("mongoose");
+// MongoDB connection reuse
+let cached = global.mongoose;
+if (!cached) cached = global.mongoose = { conn: null };
 
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+async function dbConnect() {
+  if (cached.conn) return cached.conn;
+  cached.conn = await mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+  return cached.conn;
+}
 
+// MongoDB schema
 const fileSchema = new mongoose.Schema({
   name: String,
   type: String,
@@ -29,10 +37,11 @@ const fileSchema = new mongoose.Schema({
   uploadedAt: { type: Date, default: Date.now },
 });
 
-const File = mongoose.model("File", fileSchema);
+const File = mongoose.models.File || mongoose.model("File", fileSchema);
 
+// Routes
 app.get("/", function (req, res) {
-  res.sendFile(path.join(__dirname, "views", "index.html"));
+  res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
 // Serve favicon to prevent route errors
@@ -42,6 +51,10 @@ app.get("/", function (req, res) {
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 
 app.post("/api/fileanalyse", upload.single("upfile"), async (req, res) => {
+  if (!req.file) return res.json({ error: "No file uploaded" });
+
+  await dbConnect();
+
   const fileData = {
     name: req.file.originalname,
     type: req.file.mimetype,
@@ -51,7 +64,7 @@ app.post("/api/fileanalyse", upload.single("upfile"), async (req, res) => {
   res.json(fileData);
 });
 
-// Listen locally; if statement to prevent production error on vercel
+// Only listen locally; vercel handles production
 if (process.env.NODE_ENV !== "production") {
   const port = process.env.PORT || 3000;
   app.listen(port, function () {
