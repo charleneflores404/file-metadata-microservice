@@ -10,9 +10,21 @@ const app = express();
 // const upload = multer({ dest: "uploads/" });
 const upload = multer({ storage: multer.memoryStorage() });
 
+// const storage = multer.diskStorage({
+//   destination: (req, res, cb) => {
+//     cb(null, "uploads");
+//   },
+//   filename: (req, file, cb) => {
+//     cb(null, file.fieldname + "-" + Date.now());
+//   },
+// });
+
+// const upload = multer({ storage: storage });
+
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use("/public", express.static(path.join(__dirname, "public")));
+app.use(express.static("views"));
 
 // connect to db
 mongoose
@@ -35,22 +47,12 @@ const fileSchema = new Schema({
 
 const File = mongoose.model("File", fileSchema);
 
-// const storage = multer.diskStorage({
-//   destination: (req, res, cb) => {
-//     cb(null, "uploads");
-//   },
-//   filename: (req, file, cb) => {
-//     cb(null, file.fieldname + "-" + Date.now());
-//   },
-// });
-
-// const upload = multer({ storage: storage });
-
 app.get("/", (req, res) => {
-  res.sendFile(process.cwd() + "/views/index.html");
+  res.sendFile(path.join(__dirname, "views", "index.html"));
 });
 
 app.post("/api/fileanalyse", upload.single("upfile"), async (req, res) => {
+  if (!req.file) return res.json({ error: "No file uploaded" });
   const fileData = {
     name: req.file.originalname,
     type: req.file.mimetype,
@@ -60,7 +62,7 @@ app.post("/api/fileanalyse", upload.single("upfile"), async (req, res) => {
   res.json(fileData);
 });
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8080 || 3000;
 app.listen(port, () => {
   console.log("Your app is listening on port " + port);
 });
