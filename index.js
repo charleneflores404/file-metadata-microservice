@@ -14,6 +14,11 @@ app.get("/", function (req, res) {
   res.sendFile(process.cwd() + "/views/index.html");
 });
 
+// Serve favicon to prevent route errors
+app.get("/favicon.ico", (req, res) => {
+  res.sendFile(process.cwd() + "public", "favicon.ico");
+});
+
 app.post("/api/fileanalyse", upload.single("upfile"), (req, res, next) => {
   const file = req.file;
   res.json({
