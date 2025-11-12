@@ -6,7 +6,8 @@ const app = express();
 
 const bodyParser = require("body-parser");
 const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
+// const upload = multer({ dest: "uploads/" });
+const upload = multer({ storage: multer.memoryStorage() }); // use memory storage instead of disk as vercel cannot write to disk
 
 app.use(cors());
 app.use("/public", express.static(process.cwd() + "/public"));
