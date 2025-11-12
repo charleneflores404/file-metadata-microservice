@@ -1,9 +1,7 @@
 {
   "version": 2,
   "functions": {
-    "api/index.js": {
-      "runtime": "nodejs18"
-    }
+    "api/index.js": { "runtime": "nodejs22" }
   },
   "routes": [{ "src": "/api/fileanalyse", "dest": "/api/index.js" }]
 }
